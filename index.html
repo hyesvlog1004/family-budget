@@ -2,11 +2,9 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>가계 재정 관리</title>
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
 :root{
@@ -26,52 +24,85 @@
   --c-hs:#fce4ec;--c-hs-t:#c2185b;
   --c-yj:#e3f2fd;--c-yj-t:#1565c0;
   --c-both:#f3e5f5;--c-both-t:#6a1b9a;
+  --radius-card:12px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
 }
-*{box-sizing:border-box;margin:0;padding:0}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Noto Sans KR',sans-serif;background:var(--bg);color:var(--text);font-size:13px;min-height:100vh}
-.app{max-width:980px;margin:0 auto;padding:20px 16px}
-.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:10px}
-.app-title{font-size:20px;font-weight:700;letter-spacing:-0.5px}
-.month-nav{display:flex;align-items:center;gap:6px}
-.month-nav button{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif}
+.app{max-width:980px;margin:0 auto;padding:16px 14px calc(16px + var(--safe-bottom))}
+
+/* ── 헤더 ── */
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap}
+.app-title{font-size:18px;font-weight:700;letter-spacing:-0.5px;white-space:nowrap}
+.month-nav{display:flex;align-items:center;gap:4px}
+.month-nav button{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 12px;cursor:pointer;font-size:14px;color:var(--text);font-family:'Noto Sans KR',sans-serif;min-width:36px}
 .month-nav button:hover{background:var(--surface2)}
-.month-label{font-size:16px;font-weight:700;min-width:100px;text-align:center}
-.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:18px}
-.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 14px}
-.sum-label{font-size:11px;color:var(--text2);margin-bottom:5px}
-.sum-val{font-size:15px;font-weight:700}
+.month-label{font-size:15px;font-weight:700;min-width:88px;text-align:center}
+#sync-status{font-size:11px;color:var(--text3)}
+
+/* ── 요약 카드 ── */
+.summary-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px 12px}
+.sum-label{font-size:10px;color:var(--text2);margin-bottom:4px}
+.sum-val{font-size:14px;font-weight:700}
 .c-in{color:var(--income)}.c-ex{color:var(--expense)}.c-sv{color:var(--saving)}
-.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.tab{padding:7px 18px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;color:var(--text2);background:var(--surface);border:1px solid var(--border);font-family:'Noto Sans KR',sans-serif}
+
+/* ── 탭 ── */
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;margin-bottom:14px}
+.tab{padding:8px 4px;border-radius:8px;cursor:pointer;font-size:12px;font-weight:500;color:var(--text2);background:var(--surface);border:1px solid var(--border);font-family:'Noto Sans KR',sans-serif;text-align:center;line-height:1.3;white-space:pre-line}
 .tab:hover{background:var(--surface2)}
 .tab.active{background:var(--text);color:#fff;border-color:var(--text)}
 .page{display:none}.page.active{display:block}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:14px;overflow:hidden}
-.card-header{padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text2)}
+
+/* ── 공용 카드 ── */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-card);margin-bottom:12px;overflow:hidden}
+.card-header{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:var(--text2)}
 .badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500}
 .badge-in{background:var(--income-bg);color:var(--income)}
 .badge-ex{background:var(--expense-bg);color:var(--expense)}
 .badge-sv{background:var(--saving-bg);color:var(--saving)}
+
+/* ── 수입 그리드 ── */
 .income-grid{display:grid;grid-template-columns:1fr 1fr}
-.income-person{padding:14px 16px}
+.income-person{padding:12px 14px}
 .income-person:first-child{border-right:1px solid var(--border)}
 .person-tag{display:inline-block;font-size:12px;font-weight:700;padding:3px 12px;border-radius:20px;margin-bottom:10px}
 .tag-hs{background:var(--c-hs);color:var(--c-hs-t)}
 .tag-yj{background:var(--c-yj);color:var(--c-yj-t)}
 .field-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
-.field-label{font-size:11px;color:var(--text3);min-width:52px}
+.field-label{font-size:11px;color:var(--text3);min-width:48px}
 .field-val{flex:1}
-input[type="date"],input[type="number"],input[type="text"],select,textarea{border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:12px;width:100%;background:var(--surface);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none}
+input[type="date"],input[type="number"],input[type="text"],select,textarea{
+  border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;width:100%;
+  background:var(--surface);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;
+  -webkit-appearance:none;appearance:none}
 input:focus,select:focus,textarea:focus{border-color:#999}
 input[type="number"]{text-align:right}
+
+/* ── PC용 테이블 (768px 이상) ── */
 .tbl{width:100%;border-collapse:collapse}
 .tbl thead tr{background:var(--surface2)}
 .tbl th{padding:7px 8px;font-size:11px;font-weight:500;color:var(--text2);text-align:left;border-bottom:1px solid var(--border)}
 .tbl th.r{text-align:right}.tbl th.c{text-align:center}
-.tbl td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.tbl td{padding:6px 8px;border-bottom:1px solid var(--border);vertical-align:middle;font-size:12px}
 .tbl tbody tr:last-child td{border-bottom:none}
 .tbl tr.section-divider td{border-bottom:3px solid var(--border);padding:0;height:0}
 .tbl td.r{text-align:right}.tbl td.c{text-align:center}
+
+/* ── 모바일 카드형 리스트 (767px 이하) ── */
+.row-card{background:var(--surface);border-bottom:1px solid var(--border);padding:11px 14px}
+.row-card:last-child{border-bottom:none}
+.row-card-top{display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap}
+.row-card-name{font-size:13px;font-weight:500;color:var(--text);flex:1;min-width:0}
+.row-card-mid{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+.row-card-amt-wrap{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.row-card-budget{font-size:11px;color:var(--text3)}
+.row-card-actual{font-size:14px;font-weight:700;color:var(--text)}
+.row-card-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.row-card-date{font-size:11px;color:var(--text3)}
+.row-card-actions{display:flex;gap:6px;align-items:center}
+
+/* ── 배지류 ── */
 .cat-badge{display:inline-block;font-size:11px;font-weight:500;padding:2px 7px;border-radius:10px;white-space:nowrap}
 .cat-주거{background:var(--c-housing);color:var(--c-housing-t);border:1px solid var(--c-housing-b)}
 .cat-통신{background:var(--c-comm);color:var(--c-comm-t);border:1px solid var(--c-comm-b)}
@@ -88,7 +119,7 @@ input[type="number"]{text-align:right}
 .who-용조{background:var(--c-yj);color:var(--c-yj-t)}
 .who-공통{background:var(--c-both);color:var(--c-both-t)}
 .chk-wrap{display:flex;align-items:center;justify-content:center}
-.chk-label{font-size:10px;padding:2px 7px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text3);white-space:nowrap;user-select:none}
+.chk-label{font-size:10px;padding:3px 9px;border-radius:10px;cursor:pointer;border:1px solid var(--border);background:var(--surface2);color:var(--text3);white-space:nowrap;user-select:none}
 .chk-label.done{background:#e8f5ee;color:#1a6b3c;border-color:#a5d6b5;font-weight:700}
 .chk-hidden{display:none}
 .diff-plus{color:var(--expense);font-size:10px;font-weight:500}
@@ -96,40 +127,47 @@ input[type="number"]{text-align:right}
 .has-tooltip{position:relative;cursor:default}
 .has-tooltip .tooltip{display:none;position:absolute;right:calc(100% + 6px);top:50%;transform:translateY(-50%);background:#333;color:#fff;font-size:11px;padding:3px 8px;border-radius:6px;white-space:nowrap;z-index:10;pointer-events:none}
 .has-tooltip:hover .tooltip{display:block}
-.total-row{display:flex;justify-content:space-between;align-items:center;padding:11px 16px;background:var(--accent-bg);border-top:1px solid var(--border)}
+
+/* ── 합계 행 ── */
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;background:var(--accent-bg);border-top:1px solid var(--border)}
 .total-label{font-size:12px;font-weight:700;color:var(--text2)}
 .total-val{font-size:16px;font-weight:700}
 .tv-in{color:var(--income)}.tv-ex{color:var(--expense)}.tv-sv{color:var(--saving)}
-.add-btn{display:block;width:calc(100% - 24px);margin:8px 12px 12px;background:none;border:1px dashed var(--border);border-radius:8px;padding:7px;cursor:pointer;font-size:12px;color:var(--text3);font-family:'Noto Sans KR',sans-serif}
+
+/* ── 추가 버튼 ── */
+.add-btn{display:block;width:calc(100% - 24px);margin:8px 12px 12px;background:none;border:1px dashed var(--border);border-radius:8px;padding:9px;cursor:pointer;font-size:12px;color:var(--text3);font-family:'Noto Sans KR',sans-serif}
 .add-btn:hover{background:var(--surface2);color:var(--text2)}
-.act-btn{background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:10px;padding:2px 6px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;margin:0 1px}
+.act-btn{background:none;border:1px solid var(--border);border-radius:5px;cursor:pointer;font-size:11px;padding:4px 8px;color:var(--text2);font-family:'Noto Sans KR',sans-serif;margin:0 1px}
 .act-btn:hover{background:var(--surface2)}
 .act-btn.del:hover{background:var(--expense-bg);color:var(--expense);border-color:var(--expense)}
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;align-items:center;justify-content:center}
+
+/* ── 모달 ── */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
-.modal{background:var(--surface);border-radius:14px;padding:22px 24px;width:360px;max-width:92vw}
-.modal-title{font-size:15px;font-weight:700;margin-bottom:16px}
+.modal{background:var(--surface);border-radius:18px 18px 0 0;padding:20px 20px calc(20px + var(--safe-bottom));width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:15px;font-weight:700;margin-bottom:14px}
 .mf{margin-bottom:11px}
 .mf label{font-size:11px;color:var(--text2);display:block;margin-bottom:3px}
-.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
-.btn-cancel{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:7px 16px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--text2)}
-.btn-save{background:var(--text);color:#fff;border:none;border-radius:8px;padding:7px 16px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:500}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}
+.btn-cancel{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--text2)}
+.btn-save{background:var(--text);color:#fff;border:none;border-radius:8px;padding:9px 18px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;font-weight:500}
+
 /* ── 순자산 카드 ── */
-.net-banner{background:linear-gradient(135deg,#e8f5ee 0%,#eef3fb 100%);border:1px solid #c8e6c9;border-radius:16px;padding:24px 26px;margin-bottom:16px}
+.net-banner{background:linear-gradient(135deg,#e8f5ee 0%,#eef3fb 100%);border:1px solid #c8e6c9;border-radius:14px;padding:18px 16px;margin-bottom:12px}
 .net-banner-label{font-size:15px;color:var(--text2);margin-bottom:6px}
-.net-banner-val{font-size:30px;font-weight:700;letter-spacing:-0.8px;color:var(--income)}
+.net-banner-val{font-size:26px;font-weight:700;letter-spacing:-0.8px;color:var(--income)}
 .net-sub-row{display:flex;justify-content:space-between;font-size:11px}
 .net-sub-label{color:var(--text3)}
 .net-sub-val{font-weight:500;color:var(--text2)}
-.asset-2col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;align-items:stretch}
+.asset-2col{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;align-items:stretch}
 .ac-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;margin-bottom:0;overflow:hidden;display:flex;flex-direction:column}
-.ac-card-header{display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:1px solid var(--border);background:var(--surface)}
-.ac-icon{font-size:16px}
+.ac-card-header{display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--surface)}
+.ac-icon{font-size:15px}
 .ac-title{font-size:13px;font-weight:700;color:var(--text);flex:1}
-.ac-add-btn{background:none;border:1px dashed var(--border);border-radius:6px;padding:3px 10px;font-size:11px;color:var(--text3);cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.ac-add-btn{background:none;border:1px dashed var(--border);border-radius:6px;padding:3px 8px;font-size:11px;color:var(--text3);cursor:pointer;font-family:'Noto Sans KR',sans-serif;white-space:nowrap}
 .ac-add-btn:hover{background:var(--surface2);color:var(--text2)}
 .ac-row-grid{display:grid;grid-template-columns:1fr 1fr;gap:0}
-.ac-field{padding:12px 16px}
+.ac-field{padding:10px 14px}
 .ac-field:first-child{border-right:1px solid var(--border)}
 .ac-field-who{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;display:inline-block;margin-bottom:6px}
 .who-hs{background:var(--c-hs);color:var(--c-hs-t)}
@@ -138,39 +176,35 @@ input[type="number"]{text-align:right}
 .ac-field input{border:1px solid var(--border);border-radius:8px;padding:6px 10px;font-size:13px;width:100%;background:var(--surface2);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;text-align:right}
 .ac-field input[type="text"]{text-align:left}
 .ac-field input:focus{border-color:#999;background:var(--surface)}
-.ac-deposit-row{display:flex;align-items:center;justify-content:space-between;padding:10px 16px 4px;gap:10px}
+.ac-deposit-row{display:flex;align-items:center;justify-content:space-between;padding:8px 14px 4px;gap:8px}
 .ac-deposit-row input{border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-size:12px;background:var(--surface2);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;text-align:right}
 .ac-deposit-row input:focus{border-color:#999;background:var(--surface)}
-/* 적금/잉여 계좌 행 */
-.ac-account-row{display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:1px solid var(--border)}
+.ac-account-row{display:flex;align-items:center;gap:6px;padding:7px 14px;border-bottom:1px solid var(--border)}
 .ac-account-row:last-child{border-bottom:none}
 .ac-account-bank{flex:1}
 .ac-account-bank input{border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--surface2);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;width:100%}
 .ac-account-amt{flex:1}
 .ac-account-amt input{border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--surface2);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;text-align:right;width:100%}
 .ac-account-bank input:focus,.ac-account-amt input:focus{border-color:#999;background:var(--surface)}
-/* 주식 종목 행 - 한 줄 레이아웃 */
-.stock-list{padding:4px 16px 4px}
-.stock-item{display:flex;align-items:center;gap:8px;padding:7px 10px;margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px}
-.stock-name-input{flex:1.2;border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;border-bottom:1px solid var(--border);padding:2px 0;min-width:0}
+.stock-list{padding:4px 14px 4px}
+.stock-item{display:flex;align-items:center;gap:6px;padding:7px 10px;margin-bottom:6px;background:var(--surface2);border:1px solid var(--border);border-radius:10px;flex-wrap:wrap}
+.stock-name-input{flex:1.2;border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;border-bottom:1px solid var(--border);padding:2px 0;min-width:60px}
 .stock-num-inline{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
 .stock-num-inline label{font-size:10px;color:var(--text3)}
 .stock-num-inline input{border:1px solid var(--border);border-radius:6px;padding:4px 7px;font-size:12px;width:100%;background:var(--surface);color:var(--text);font-family:'Noto Sans KR',sans-serif;outline:none;text-align:right}
 .stock-num-inline input:focus{border-color:#999}
-.stock-gain-inline{font-size:10px;font-weight:500;white-space:nowrap;min-width:60px;text-align:right}
+.stock-gain-inline{font-size:10px;font-weight:500;white-space:nowrap;min-width:44px;text-align:right}
 .stock-gain-inline.plus{color:var(--expense)}.stock-gain-inline.minus{color:var(--income)}.stock-gain-inline.zero{color:var(--text3)}
-.ac-subtotal-row{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:var(--accent-bg);border-top:1px solid var(--border);font-size:12px;color:var(--text2);margin-top:auto}
+.ac-subtotal-row{display:flex;justify-content:space-between;align-items:center;padding:9px 14px;background:var(--accent-bg);border-top:1px solid var(--border);font-size:12px;color:var(--text2);margin-top:auto}
 .ac-subtotal-row span:last-child{font-weight:700;font-size:13px;color:var(--text)}
 .ac-card-body{flex:1}
 .ac-del-btn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0 2px;line-height:1}
 .ac-del-btn:hover{color:var(--expense)}
-.history-wrap{padding:0 16px 16px}
-.hist-row{margin-bottom:10px}
-.hist-meta{display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px}
-.hist-bar-bg{height:5px;background:var(--surface2);border-radius:3px}
-.hist-bar-fill{height:5px;border-radius:3px;transition:width .4s}
-.note-row{padding:10px 16px 14px}
-.note-row textarea{resize:vertical;min-height:60px}
+
+/* ── 저축률 ── */
+.saving-rate-wrap{padding:14px 16px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap}
+
+/* ── 메모 ── */
 .income-memo-display{min-height:32px;padding:6px 10px;border:1px dashed var(--border);border-radius:8px;font-size:12px;color:var(--text2);cursor:pointer;background:var(--surface2);line-height:1.5;white-space:pre-wrap;word-break:break-all}
 .income-memo-display:empty::before{content:'클릭하여 메모 입력...';color:var(--text3)}
 .income-memo-display:hover{border-color:#999;background:var(--surface)}
@@ -179,20 +213,83 @@ input[type="number"]{text-align:right}
 .income-memo-btns button{border:1px solid var(--border);border-radius:6px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:'Noto Sans KR',sans-serif;background:var(--surface);color:var(--text2)}
 .income-memo-btns button:first-child{background:var(--text);color:#fff;border-color:var(--text)}
 .bubble-wrap{display:flex;flex-direction:column;gap:8px;margin-bottom:8px}
-.bubble{max-width:80%;padding:9px 13px;border-radius:18px;font-size:13px;line-height:1.5;position:relative;word-break:break-all}
+.bubble{max-width:82%;padding:9px 13px;border-radius:18px;font-size:13px;line-height:1.5;position:relative;word-break:break-all}
 .bubble-out{align-self:flex-end;background:#1a1a18;color:#fff;border-bottom-right-radius:4px}
 .bubble-time{font-size:10px;color:var(--text3);margin-top:3px;text-align:right}
 .bubble-del{position:absolute;top:4px;right:6px;background:none;border:none;cursor:pointer;font-size:11px;color:rgba(255,255,255,0.4);padding:0;line-height:1}
 .bubble-del:hover{color:rgba(255,255,255,0.9)}
-.memo-nav-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:3px 10px;cursor:pointer;font-size:12px;color:var(--text2);font-family:'Noto Sans KR',sans-serif}
+.memo-nav-btn{background:none;border:1px solid var(--border);border-radius:6px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--text2);font-family:'Noto Sans KR',sans-serif}
 .memo-nav-btn:hover{background:var(--surface2)}
 .memo-nav-btn:disabled{opacity:0.3;cursor:default}
-.legend{display:flex;flex-wrap:wrap;gap:6px;padding:8px 16px 12px;align-items:center}
-@media(max-width:600px){
-  .summary-strip{grid-template-columns:repeat(2,1fr)}
+.legend{display:flex;flex-wrap:wrap;gap:5px;padding:8px 14px 12px;align-items:center}
+
+/* ══════════════════════════════════
+   모바일 반응형 (767px 이하)
+══════════════════════════════════ */
+@media(max-width:767px){
+  .app{padding:12px 12px calc(12px + var(--safe-bottom))}
+  .app-title{font-size:16px}
+  .month-label{font-size:13px;min-width:78px}
+
+  /* 요약 카드: 2×2 */
+  .summary-strip{grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px}
+  .sum-label{font-size:10px}
+  .sum-val{font-size:13px}
+
+  /* 탭: 2×2 그리드 */
+  .tabs{grid-template-columns:repeat(2,1fr);gap:4px;margin-bottom:10px}
+  .tab{font-size:12px;padding:9px 6px}
+
+  /* 수입: 세로 2단 */
   .income-grid{grid-template-columns:1fr}
   .income-person:first-child{border-right:none;border-bottom:1px solid var(--border)}
-  .asset-grid{grid-template-columns:repeat(2,1fr)}
+
+  /* PC 테이블 숨김 */
+  .tbl-wrap{display:none}
+
+  /* 모바일 카드 표시 */
+  .mobile-list{display:block}
+
+  /* 순자산 배너: 세로 */
+  .net-banner-inner{flex-direction:column !important;gap:14px !important}
+  .net-banner-inner > div:last-child{flex:unset !important;width:100% !important}
+  .net-banner-val{font-size:22px}
+
+  /* 순자산 2단 → 1단 */
+  .asset-2col{grid-template-columns:1fr}
+
+  /* 목표 게이지 블록 */
+  .goal-block{width:100% !important;flex:unset !important}
+
+  /* 저축률 세로 */
+  .saving-rate-wrap{flex-direction:column;align-items:flex-start;gap:10px}
+  .saving-rate-wrap > div:last-child{width:100%;max-width:unset !important}
+
+  /* 모달: 하단 시트 */
+  .modal{border-radius:18px 18px 0 0}
+
+  /* 차트 텍스트 크기 */
+  .chart-note{font-size:11px}
+
+  /* 헤더 flex 조정 */
+  .header{flex-wrap:nowrap;justify-content:space-between}
+  #sync-status{display:none}
+
+  /* 파킹통장 세로 */
+  .parking-grid{grid-template-columns:1fr !important}
+  .parking-grid .ac-field:first-child{border-right:none !important;border-bottom:1px solid var(--border)}
+}
+
+/* PC: 모바일 카드 숨김 */
+@media(min-width:768px){
+  .mobile-list{display:none}
+  .tbl-wrap{display:block}
+}
+
+/* 작은 폰 (360px 이하) */
+@media(max-width:360px){
+  .tabs{grid-template-columns:repeat(2,1fr)}
+  .tab{font-size:11px;padding:8px 4px}
 }
 </style>
 </head>
@@ -201,7 +298,7 @@ input[type="number"]{text-align:right}
 
 <div class="header">
   <span class="app-title">가계 재정 관리</span>
-  <span id="sync-status" style="font-size:11px;color:var(--text3);margin-left:8px"></span>
+  <span id="sync-status"></span>
   <div class="month-nav">
     <button onclick="changeMonth(-1)">&#8249;</button>
     <span class="month-label" id="monthLabel"></span>
@@ -211,19 +308,19 @@ input[type="number"]{text-align:right}
 
 <div class="summary-strip">
   <div class="sum-card"><div class="sum-label">총 수입</div><div class="sum-val c-in" id="sumIn">—</div></div>
-  <div class="sum-card"><div class="sum-label">고정지출 합계</div><div class="sum-val c-ex" id="sumEx">—</div></div>
+  <div class="sum-card"><div class="sum-label">고정지출</div><div class="sum-val c-ex" id="sumEx">—</div></div>
   <div class="sum-card"><div class="sum-label">저축 합계</div><div class="sum-val c-sv" id="sumSv">—</div></div>
-  <div class="sum-card"><div class="sum-label">잔여 가용금액</div><div class="sum-val" id="sumRm">—</div></div>
+  <div class="sum-card"><div class="sum-label">잔여</div><div class="sum-val" id="sumRm">—</div></div>
 </div>
 
 <div class="tabs">
   <button class="tab active" onclick="switchTab('income')">월 수입 🩷</button>
-  <button class="tab" onclick="switchTab('expense')">월 고정지출 💸</button>
+  <button class="tab" onclick="switchTab('expense')">고정지출 💸</button>
   <button class="tab" onclick="switchTab('saving')">월 저축 💰</button>
-  <button class="tab" onclick="switchTab('asset')">우리쀼의 순자산 📈</button>
+  <button class="tab" onclick="switchTab('asset')">순자산 📈</button>
 </div>
 
-<!-- 수입 -->
+<!-- ══ 수입 ══ -->
 <div id="page-income" class="page active">
   <div class="card">
     <div class="card-header">급여 <span class="badge badge-in">수입</span></div>
@@ -272,23 +369,22 @@ input[type="number"]{text-align:right}
       <span class="total-val tv-in" id="totalIn">0 원</span>
     </div>
   </div>
+
+  <!-- 메모 카드 -->
   <div class="card">
     <div class="card-header" style="justify-content:space-between">
       <span>메모</span>
       <div style="display:flex;align-items:center;gap:10px">
-        <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer">
-          배경
+        <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer">배경
           <input type="color" id="memo-bg-color" value="#f5f4f0" oninput="applyMemoColors()" onchange="applyMemoColors()" style="width:24px;height:20px;border:none;padding:0;cursor:pointer;border-radius:4px;background:none">
         </label>
-        <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer">
-          말풍선
+        <label style="font-size:11px;color:var(--text3);display:flex;align-items:center;gap:4px;cursor:pointer">말풍선
           <input type="color" id="memo-bubble-color" value="#1a1a18" oninput="applyMemoColors()" onchange="applyMemoColors()" style="width:24px;height:20px;border:none;padding:0;cursor:pointer;border-radius:4px;background:none">
         </label>
         <button onclick="resetMemoColors()" style="font-size:10px;color:var(--text3);background:none;border:1px solid var(--border);border-radius:5px;padding:2px 7px;cursor:pointer;font-family:'Noto Sans KR',sans-serif">초기화</button>
       </div>
     </div>
-    <!-- 말풍선 영역 -->
-    <div id="memo-bubbles-wrap" style="padding:12px 16px 0;min-height:60px;border-radius:0;transition:background .2s">
+    <div id="memo-bubbles-wrap" style="padding:12px 14px 0;min-height:60px;transition:background .2s">
       <div id="memo-nav" style="display:none;justify-content:space-between;align-items:center;margin-bottom:8px">
         <button class="memo-nav-btn" onclick="memoPage(-1)">&#8249; 이전</button>
         <span id="memo-page-label" style="font-size:11px;color:var(--text3)"></span>
@@ -296,15 +392,14 @@ input[type="number"]{text-align:right}
       </div>
       <div id="memo-bubbles"></div>
     </div>
-    <!-- 입력 영역 -->
-    <div style="padding:10px 16px 14px;display:flex;gap:8px;align-items:flex-end">
+    <div style="padding:10px 14px 14px;display:flex;gap:8px;align-items:flex-end">
       <textarea id="memo-input" rows="2" placeholder="메모를 입력하세요..." style="flex:1;resize:none;border:1px solid var(--border);border-radius:12px;padding:8px 12px;font-size:13px;font-family:'Noto Sans KR',sans-serif;color:var(--text);background:var(--surface);outline:none"></textarea>
       <button onclick="addMemoBubble()" style="background:var(--text);color:#fff;border:none;border-radius:12px;padding:8px 14px;cursor:pointer;font-size:13px;font-family:'Noto Sans KR',sans-serif;white-space:nowrap;height:38px">전송</button>
     </div>
   </div>
 </div>
 
-<!-- 고정지출 -->
+<!-- ══ 고정지출 ══ -->
 <div id="page-expense" class="page">
   <div class="card">
     <div class="card-header">분류 및 대상 범례</div>
@@ -316,29 +411,34 @@ input[type="number"]{text-align:right}
       <span class="cat-badge cat-용돈">용돈</span>
       <span class="cat-badge cat-할부">할부</span>
       <span class="cat-badge cat-생활비">생활비</span>
-      <span style="border-left:1px solid var(--border);margin:0 4px;height:16px;display:inline-block"></span>
+      <span style="border-left:1px solid var(--border);margin:0 3px;height:16px;display:inline-block"></span>
       <span class="who-badge who-혜선">혜선</span>
       <span class="who-badge who-용조">용조</span>
       <span class="who-badge who-공통">공통</span>
-      <span style="border-left:1px solid var(--border);margin:0 4px;height:16px;display:inline-block"></span>
+      <span style="border-left:1px solid var(--border);margin:0 3px;height:16px;display:inline-block"></span>
       <span class="chk-label done" style="cursor:default">✓ 이체완료</span>
       <span class="chk-label" style="cursor:default">미이체</span>
     </div>
   </div>
   <div class="card">
     <div class="card-header">고정지출 항목 <span class="badge badge-ex">지출</span></div>
-    <table class="tbl">
-      <thead><tr>
-        <th style="width:10%">분류</th><th style="width:9%">대상</th>
-        <th style="width:21%">내용</th>
-        <th class="r" style="width:9%;color:var(--text3)">예산</th>
-        <th class="r" style="width:20%;color:var(--text)">실청구액</th>
-        <th class="c" style="width:8%">이체일</th>
-        <th class="c" style="width:10%">이체확인</th>
-        <th class="c" style="width:12%">관리</th>
-      </tr></thead>
-      <tbody id="expBody"></tbody>
-    </table>
+    <!-- PC: 테이블 -->
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th style="width:10%">분류</th><th style="width:9%">대상</th>
+          <th style="width:21%">내용</th>
+          <th class="r" style="width:9%;color:var(--text3)">예산</th>
+          <th class="r" style="width:20%;color:var(--text)">실청구액</th>
+          <th class="c" style="width:8%">이체일</th>
+          <th class="c" style="width:10%">이체확인</th>
+          <th class="c" style="width:12%">관리</th>
+        </tr></thead>
+        <tbody id="expBody"></tbody>
+      </table>
+    </div>
+    <!-- 모바일: 카드 리스트 -->
+    <div class="mobile-list" id="expMobile"></div>
     <button class="add-btn" onclick="addRow('expBody','exp')">+ 항목 추가</button>
     <div class="total-row" style="flex-direction:column;align-items:flex-end;gap:3px">
       <div style="display:flex;justify-content:space-between;width:100%">
@@ -351,25 +451,29 @@ input[type="number"]{text-align:right}
       </div>
     </div>
   </div>
-
 </div>
 
-<!-- 저축 -->
+<!-- ══ 저축 ══ -->
 <div id="page-saving" class="page">
   <div class="card">
     <div class="card-header">저축 항목 <span class="badge badge-sv">저축</span></div>
-    <table class="tbl">
-      <thead><tr>
-        <th style="width:10%">분류</th><th style="width:9%">대상</th>
-        <th style="width:21%">내용</th>
-        <th class="r" style="width:14%">예정액</th>
-        <th class="r" style="width:16%">실입금액</th>
-        <th class="c" style="width:8%">이체일</th>
-        <th class="c" style="width:10%">이체확인</th>
-        <th class="c" style="width:12%">관리</th>
-      </tr></thead>
-      <tbody id="savBody"></tbody>
-    </table>
+    <!-- PC: 테이블 -->
+    <div class="tbl-wrap">
+      <table class="tbl">
+        <thead><tr>
+          <th style="width:10%">분류</th><th style="width:9%">대상</th>
+          <th style="width:21%">내용</th>
+          <th class="r" style="width:14%">예정액</th>
+          <th class="r" style="width:16%">실입금액</th>
+          <th class="c" style="width:8%">이체일</th>
+          <th class="c" style="width:10%">이체확인</th>
+          <th class="c" style="width:12%">관리</th>
+        </tr></thead>
+        <tbody id="savBody"></tbody>
+      </table>
+    </div>
+    <!-- 모바일: 카드 리스트 -->
+    <div class="mobile-list" id="savMobile"></div>
     <button class="add-btn" onclick="addRow('savBody','sav')">+ 저축 항목 추가</button>
     <div class="total-row">
       <span class="total-label">저축 합계</span>
@@ -379,7 +483,7 @@ input[type="number"]{text-align:right}
 
   <!-- 저축률 카드 -->
   <div class="card" style="overflow:hidden">
-    <div style="padding:14px 18px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+    <div class="saving-rate-wrap">
       <div>
         <div style="font-size:11px;color:var(--text3);margin-bottom:4px">이번 달 저축률 (저축 합계 ÷ 총 수입)</div>
         <div style="display:flex;align-items:baseline;gap:6px">
@@ -388,13 +492,12 @@ input[type="number"]{text-align:right}
         </div>
         <div id="sav-rate-sub" style="font-size:11px;color:var(--text3);margin-top:3px"></div>
       </div>
-      <div style="flex:1;max-width:260px">
+      <div style="flex:1;max-width:280px;width:100%">
         <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-bottom:5px">
           <span>0%</span><span>목표 30%</span><span>50%</span>
         </div>
         <div style="background:var(--border);border-radius:20px;height:10px;overflow:hidden;position:relative">
           <div id="sav-rate-bar" style="height:100%;border-radius:20px;background:linear-gradient(90deg,#1a3f6b,#378ADD);transition:width .5s;width:0%"></div>
-          <!-- 30% 목표선 -->
           <div style="position:absolute;top:0;left:30%;width:2px;height:100%;background:#9C27B0;opacity:0.6"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:10px;margin-top:5px">
@@ -406,31 +509,26 @@ input[type="number"]{text-align:right}
   </div>
 </div>
 
-<!-- 순자산 -->
+<!-- ══ 순자산 ══ -->
 <div id="page-asset" class="page">
-
-  <!-- 배너 -->
   <div class="net-banner">
-    <div class="net-banner-label" style="font-size:16px;font-weight:700;margin-bottom:12px">💰 우리집 순자산</div>
-    <div style="display:flex;align-items:flex-start;gap:24px">
-      <!-- 좌측: 총액 + 4개 카테고리 -->
+    <div style="font-size:16px;font-weight:700;margin-bottom:12px">💰 우리집 순자산</div>
+    <div class="net-banner-inner" style="display:flex;align-items:flex-start;gap:18px">
       <div style="flex:1;min-width:0">
         <div class="net-banner-val" id="netVal">계산 중...</div>
-        <div id="netSub" style="margin-top:18px;display:flex;flex-direction:column;gap:10px"></div>
+        <div id="netSub" style="margin-top:14px;display:flex;flex-direction:column;gap:10px"></div>
       </div>
-      <!-- 우측: 목표 저축 게이지 -->
-      <div style="flex:0 0 46%;background:rgba(255,255,255,0.65);border-radius:14px;padding:18px 20px">
+      <div class="goal-block" style="flex:0 0 46%;background:rgba(255,255,255,0.65);border-radius:14px;padding:16px 18px">
         <div style="font-size:11px;color:var(--text3);margin-bottom:6px;font-weight:500">안전자산 + 투자자산 + 현금성자산</div>
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
           <span style="font-size:13px;font-weight:700;color:var(--text2)">목표 저축액</span>
           <div style="display:flex;align-items:center;gap:5px">
             <input type="text" inputmode="numeric" id="goal-amt" value="50,000,000"
-              style="width:110px;text-align:right;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:var(--surface);outline:none;color:var(--text);font-weight:600"
+              style="width:100px;text-align:right;border:1px solid var(--border);border-radius:7px;padding:5px 8px;font-size:13px;font-family:'Noto Sans KR',sans-serif;background:var(--surface);outline:none;color:var(--text);font-weight:600"
               oninput="onFmtInput(this);calcAsset()">
             <span style="font-size:12px;color:var(--text3)">원</span>
           </div>
         </div>
-        <!-- 게이지 바 -->
         <div style="background:var(--border);border-radius:20px;height:14px;overflow:hidden;margin-bottom:10px">
           <div id="goal-bar" style="height:100%;border-radius:20px;background:linear-gradient(90deg,#2196F3,#4CAF50);transition:width .5s;width:0%"></div>
         </div>
@@ -443,9 +541,7 @@ input[type="number"]{text-align:right}
     </div>
   </div>
 
-  <!-- 2단 그리드 -->
   <div class="asset-2col">
-
     <div class="ac-card">
       <div class="ac-card-header"><span class="ac-icon">🏡</span><span class="ac-title">부동산</span></div>
       <div class="ac-field" style="border-bottom:1px solid var(--border)">
@@ -456,7 +552,7 @@ input[type="number"]{text-align:right}
         <div class="ac-field-label">대출 잔액</div>
         <input type="text" inputmode="numeric" id="a-re-loan" placeholder="0" oninput="onFmtInput(this);calcAsset()">
       </div>
-      <div class="ac-subtotal-row"><span>부동산 순자산 (시세 − 대출)</span><span id="re-net">—</span></div>
+      <div class="ac-subtotal-row"><span>부동산 순자산</span><span id="re-net">—</span></div>
     </div>
 
     <div class="ac-card">
@@ -478,7 +574,7 @@ input[type="number"]{text-align:right}
       <div class="ac-card-header"><span class="ac-icon">📊</span><span class="ac-title">ISA 주식 계좌</span><button class="ac-add-btn" onclick="addStockItem('isa')">+ 종목</button></div>
       <div class="ac-deposit-row">
         <span class="ac-field-label">예수금</span>
-        <input type="text" inputmode="numeric" id="a-isa-cash" placeholder="0" style="width:130px;text-align:right;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--surface2);font-family:'Noto Sans KR',sans-serif;outline:none" oninput="onFmtInput(this);calcAsset()">
+        <input type="text" inputmode="numeric" id="a-isa-cash" placeholder="0" style="width:120px;text-align:right;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--surface2);font-family:'Noto Sans KR',sans-serif;outline:none" oninput="onFmtInput(this);calcAsset()">
       </div>
       <div id="isa-stocks" class="stock-list"></div>
       <div class="ac-subtotal-row"><span>ISA 합계</span><span id="isa-total">—</span></div>
@@ -488,7 +584,7 @@ input[type="number"]{text-align:right}
       <div class="ac-card-header"><span class="ac-icon">📈</span><span class="ac-title">종합 주식 계좌</span><button class="ac-add-btn" onclick="addStockItem('stock')">+ 종목</button></div>
       <div class="ac-deposit-row">
         <span class="ac-field-label">예수금</span>
-        <input type="text" inputmode="numeric" id="a-stock-cash" placeholder="0" style="width:130px;text-align:right;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--surface2);font-family:'Noto Sans KR',sans-serif;outline:none" oninput="onFmtInput(this);calcAsset()">
+        <input type="text" inputmode="numeric" id="a-stock-cash" placeholder="0" style="width:120px;text-align:right;border:1px solid var(--border);border-radius:8px;padding:5px 9px;font-size:12px;background:var(--surface2);font-family:'Noto Sans KR',sans-serif;outline:none" oninput="onFmtInput(this);calcAsset()">
       </div>
       <div id="stock-stocks" class="stock-list"></div>
       <div class="ac-subtotal-row"><span>종합계좌 합계</span><span id="stock-total">—</span></div>
@@ -505,13 +601,12 @@ input[type="number"]{text-align:right}
       <div id="surplus-accounts" style="flex:1"></div>
       <div class="ac-subtotal-row"><span>잉여 합계</span><span id="surplus-total">—</span></div>
     </div>
-
   </div>
 
   <!-- 파킹통장 (전폭) -->
-  <div class="ac-card">
+  <div class="ac-card" style="margin-bottom:10px">
     <div class="ac-card-header"><span class="ac-icon">🅿️</span><span class="ac-title">파킹통장</span></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;flex:1">
+    <div class="parking-grid" style="display:grid;grid-template-columns:1fr 1fr;flex:1">
       <div class="ac-field" style="border-right:1px solid var(--border)">
         <div class="ac-field-label">잔액</div>
         <input type="text" inputmode="numeric" id="a-park" placeholder="0" oninput="onFmtInput(this);calcAsset()">
@@ -536,14 +631,13 @@ input[type="number"]{text-align:right}
         </div>
       </div>
     </div>
-    <div style="padding:16px 16px 12px;overflow-x:auto">
-      <canvas id="historyChart" height="200" style="display:block;width:100%;min-width:600px"></canvas>
+    <div style="padding:14px 14px 12px;overflow-x:auto;-webkit-overflow-scrolling:touch">
+      <canvas id="historyChart" height="180" style="display:block;width:100%;min-width:320px"></canvas>
     </div>
   </div>
-
 </div>
 
-<!-- 수정 모달 -->
+<!-- ══ 수정 모달 ══ -->
 <div class="modal-bg" id="editModal">
   <div class="modal">
     <div class="modal-title" id="modalTitle">항목 수정</div>
@@ -553,7 +647,7 @@ input[type="number"]{text-align:right}
         <option>용돈</option><option>할부</option><option>생활비</option>
         <option>청약</option><option>적금</option><option>예비비</option>
       </select>
-      <input type="text" id="m-cat-custom" placeholder="새 분류명 입력..." style="display:none;margin-top:6px;border:1px solid var(--border);border-radius:6px;padding:5px 9px;font-size:12px;width:100%;font-family:'Noto Sans KR',sans-serif;outline:none">
+      <input type="text" id="m-cat-custom" placeholder="새 분류명 입력..." style="display:none;margin-top:6px;border:1px solid var(--border);border-radius:6px;padding:6px 9px;font-size:13px;width:100%;font-family:'Noto Sans KR',sans-serif;outline:none">
     </div>
     <div class="mf"><label>대상</label>
       <select id="m-who"><option>혜선</option><option>용조</option><option>공통</option></select>
@@ -572,6 +666,7 @@ input[type="number"]{text-align:right}
 
 <script>
 let cy,cm,DB={},editTr=null,editType='exp',rowSeq=0,addTargetTbId='expBody';
+const isMobile=()=>window.innerWidth<768;
 
 const DEF_EXP=[
   {cat:'주거',who:'공통',name:'주담대 원리금',budget:'1178333',actual:'',date:'20',chk:false,path:''},
@@ -607,44 +702,37 @@ function fmt(n){if(n===''||n===null||n===undefined)return'—';return Math.round
 function fmtN(n){return Math.round(Number(n)).toLocaleString('ko-KR')}
 function gv(id){return parseFloat(document.getElementById(id)?.value)||0}
 
-/* ── Firebase 초기화 ── */
-const firebaseConfig = {
-  apiKey: "AIzaSyAjtFwAcrNiXqIf9DzmpSteXyeMCs9gAlk",
-  authDomain: "family-budget-60760.firebaseapp.com",
-  databaseURL: "https://family-budget-60760-default-rtdb.firebaseio.com",
-  projectId: "family-budget-60760",
-  storageBucket: "family-budget-60760.firebasestorage.app",
-  messagingSenderId: "435491464417",
-  appId: "1:435491464417:web:5609202bc1ac9508c8c3a0"
+/* ── Firebase ── */
+const firebaseConfig={
+  apiKey:"AIzaSyAjtFwAcrNiXqIf9DzmpSteXyeMCs9gAlk",
+  authDomain:"family-budget-60760.firebaseapp.com",
+  databaseURL:"https://family-budget-60760-default-rtdb.firebaseio.com",
+  projectId:"family-budget-60760",
+  storageBucket:"family-budget-60760.firebasestorage.app",
+  messagingSenderId:"435491464417",
+  appId:"1:435491464417:web:5609202bc1ac9508c8c3a0"
 };
-let fbDB = null;
+let fbDB=null;
 function initFirebase(){
   try{
-    if(typeof firebase==='undefined') throw new Error('firebase not loaded');
-    if(!firebase.apps.length) firebase.initializeApp(firebaseConfig);
-    fbDB = firebase.database();
-    return true;
-  }catch(e){
-    console.warn('Firebase 초기화 실패:', e);
-    return false;
-  }
+    if(typeof firebase==='undefined')throw new Error('firebase not loaded');
+    if(!firebase.apps.length)firebase.initializeApp(firebaseConfig);
+    fbDB=firebase.database();return true;
+  }catch(e){console.warn('Firebase 초기화 실패:',e);return false;}
 }
 
 let persistTimer=null;
 function persist(){
-  // localStorage 항상 백업
   try{localStorage.setItem('hb5',JSON.stringify(DB));}catch(e){}
-  if(!fbDB){return;}
+  if(!fbDB)return;
   clearTimeout(persistTimer);
   persistTimer=setTimeout(()=>{
     const st=document.getElementById('sync-status');
-    if(st) st.textContent='저장 중...';
+    if(st)st.textContent='저장 중...';
     fbDB.ref('budget').set(JSON.parse(JSON.stringify(DB))).then(()=>{
-      if(st) st.textContent='✓ 저장됨';
-      setTimeout(()=>{if(st) st.textContent='';},2000);
-    }).catch(()=>{
-      if(st) st.textContent='⚠️ 저장 실패';
-    });
+      if(st)st.textContent='✓ 저장됨';
+      setTimeout(()=>{if(st)st.textContent='';},2000);
+    }).catch(()=>{if(st)st.textContent='⚠️ 저장 실패';});
     persistTimer=null;
   },600);
 }
@@ -652,40 +740,34 @@ function persist(){
 function init(){
   const now=new Date();cy=now.getFullYear();cm=now.getMonth()+1;
   const st=document.getElementById('sync-status');
-
   if(!initFirebase()){
-    // Firebase 로드 실패 시 localStorage 폴백
-    if(st) st.textContent='⚠️ 오프라인 모드';
+    if(st)st.textContent='⚠️ 오프라인 모드';
     try{const s=localStorage.getItem('hb5');if(s)DB=JSON.parse(s);}catch(e){}
-    renderMonth();
-    loadMemoColorPickers();
-    return;
+    renderMonth();loadMemoColorPickers();return;
   }
-
-  if(st) st.textContent='불러오는 중...';
-  fbDB.ref('budget').once('value', snap=>{
+  if(st)st.textContent='불러오는 중...';
+  fbDB.ref('budget').once('value',snap=>{
     const data=snap.val();
-    if(data) DB=data;
-    if(st) st.textContent='';
-    renderMonth();
-    loadMemoColorPickers();
-    fbDB.ref('budget').on('value', snap2=>{
+    if(data)DB=data;
+    if(st)st.textContent='';
+    renderMonth();loadMemoColorPickers();
+    fbDB.ref('budget').on('value',snap2=>{
       const d2=snap2.val();
-      if(!d2) return;
-      if(persistTimer) return;
-      DB=d2;
-      renderMonth();
+      if(!d2)return;
+      if(persistTimer)return;
+      DB=d2;renderMonth();
     });
   });
 }
+
 function changeMonth(d){
   cm+=d;
   if(cm>12){cm=1;cy++;}
   if(cm<1){cm=12;cy--;}
-  // 2026년 4월 이전으로 이동 불가
   if(cy<2026||(cy===2026&&cm<4)){cy=2026;cm=4;}
   renderMonth();
 }
+
 function renderMonth(){
   document.getElementById('monthLabel').textContent=cy+'년 '+cm+'월';
   const k=mk(cy,cm),dd=DB[k]||{};
@@ -695,24 +777,26 @@ function renderMonth(){
   document.getElementById('h-date').value=dd.hDate||'';
   document.getElementById('h-amt').value=fmtLoad(dd.hAmt);
   loadIncomeMemos(dd);
-  const resolveItems=(raw, def)=>{
-    if(!raw) return dd.hasOwnProperty('expenses')||dd.hasOwnProperty('savings') ? [] : JSON.parse(JSON.stringify(def));
-    if(Array.isArray(raw)&&raw[0]==='__empty__') return [];
-    if(Array.isArray(raw)) return raw;
+  const resolveItems=(raw,def)=>{
+    // 명시적으로 빈 배열로 저장한 경우 → 빈 배열 유지
+    if(Array.isArray(raw)&&raw.length>0&&raw[0]==='__empty__')return[];
+    // 유효한 항목이 있으면 → 그대로 사용
+    if(Array.isArray(raw)&&raw.length>0)return raw;
+    // 데이터 없으면 → 디폴트로 채우기
     return JSON.parse(JSON.stringify(def));
   };
   memoPage(0,true);
-  buildTable('expBody', resolveItems(dd.expenses, DEF_EXP),'exp');
-  buildTable('savBody', resolveItems(dd.savings, DEF_SAV),'sav');
-  loadAssetData();
-  calcAll();
-  renderHistory();
+  buildTable('expBody',resolveItems(dd.expenses,DEF_EXP),'exp');
+  buildTable('savBody',resolveItems(dd.savings,DEF_SAV),'sav');
+  loadAssetData();calcAll();renderHistory();
 }
 
+/* ── 테이블 빌드 ── */
 function buildTable(tbId,items,type){
   const tb=document.getElementById(tbId);tb.innerHTML='';
+  const mobileId=tbId==='expBody'?'expMobile':'savMobile';
+  const mb=document.getElementById(mobileId);if(mb)mb.innerHTML='';
   if(type==='exp'){
-    // 분류 순서 유지하면서 섹션 헤더 삽입
     let lastCat=null;
     items.forEach(it=>{
       if(it.cat!==lastCat){
@@ -725,16 +809,22 @@ function buildTable(tbId,items,type){
         }
       }
       renderRow(tb,it,type);
+      if(mb)renderMobileRow(mb,it,type);
     });
   } else {
-    items.forEach(it=>renderRow(tb,it,type));
+    items.forEach(it=>{
+      renderRow(tb,it,type);
+      if(mb)renderMobileRow(mb,it,type);
+    });
   }
 }
+
 function catBadge(c){return`<span class="cat-badge cat-${c||''}">${c||'?'}</span>`}
 function whoBadge(w){return`<span class="who-badge who-${w||'공통'}">${w||'공통'}</span>`}
 function chkCell(chk,uid){
   return`<div class="chk-wrap"><input type="checkbox" id="${uid}" class="chk-hidden" ${chk?'checked':''} onchange="toggleChk('${uid}')"><label for="${uid}" class="chk-label ${chk?'done':''}">${chk?'✓ 완료':'미이체'}</label></div>`
 }
+
 function renderRow(tb,it,type){
   const uid='r'+(++rowSeq);
   const tr=document.createElement('tr');
@@ -751,10 +841,10 @@ function renderRow(tb,it,type){
     const col=d>0?'#d32f2f':'#2e7d32';
     tooltipHtml=`<span class="tooltip" style="background:${col}">${msg}</span>`;
   }
-  const actualVal = bv > 0 ? fmtN(av)+'원' : (it.actual ? fmtN(av)+'원' : '');
-  const actualCell = tooltipHtml
-    ? `<td class="r has-tooltip" style="font-size:13px;font-weight:500;color:var(--text)">${actualVal}${tooltipHtml}</td>`
-    : `<td class="r" style="font-size:13px;font-weight:500;color:var(--text)">${actualVal}</td>`;
+  const actualVal=bv>0?fmtN(av)+'원':(it.actual?fmtN(av)+'원':'');
+  const actualCell=tooltipHtml
+    ?`<td class="r has-tooltip" style="font-size:13px;font-weight:500;color:var(--text)">${actualVal}${tooltipHtml}</td>`
+    :`<td class="r" style="font-size:13px;font-weight:500;color:var(--text)">${actualVal}</td>`;
   tr.innerHTML=`
     <td>${catBadge(it.cat)}</td>
     <td>${whoBadge(it.who)}</td>
@@ -766,6 +856,118 @@ function renderRow(tb,it,type){
     <td class="c"><button class="act-btn" onclick="openEdit(this.closest('tr'))">수정</button> <button class="act-btn del" onclick="delRow(this.closest('tr'))">삭제</button></td>`;
   tb.appendChild(tr);
 }
+
+/* ── 모바일 카드형 렌더 ── */
+function renderMobileRow(container,it,type){
+  const uid='mr'+(++rowSeq);
+  const bv=parseFloat(it.budget)||0;
+  const av=it.actual!==''&&it.actual!==undefined?parseFloat(it.actual)||0:bv;
+  const actualVal=bv>0?fmtN(av)+'원':(it.actual?fmtN(av)+'원':'—');
+  const budgetVal=bv?fmtN(bv)+'원':'';
+  let diffHtml='';
+  if(bv>0&&it.actual!==''&&it.actual!==undefined&&parseFloat(it.actual)!==bv){
+    const d=av-bv;
+    diffHtml=d>0
+      ?`<span style="font-size:10px;color:var(--expense);font-weight:600">▲ ${fmtN(d)}원 초과</span>`
+      :`<span style="font-size:10px;color:var(--income);font-weight:600">▼ ${fmtN(Math.abs(d))}원 절약</span>`;
+  }
+
+  // 카드 el과 숨겨진 tr 연결을 위해 dataset을 카드에도 저장
+  const div=document.createElement('div');
+  div.className='row-card';
+  div.dataset.type=type;
+  div.dataset.cat=it.cat||'';div.dataset.who=it.who||'공통';div.dataset.name=it.name||'';
+  div.dataset.budget=it.budget||'';div.dataset.actual=it.actual||'';
+  div.dataset.date=it.date||'';div.dataset.chk=it.chk?'1':'0';div.dataset.path=it.path||'';
+
+  div.innerHTML=`
+    <div class="row-card-top">
+      ${catBadge(it.cat)}
+      ${whoBadge(it.who)}
+      <span class="row-card-name">${it.name||''}</span>
+      ${diffHtml}
+    </div>
+    <div class="row-card-mid">
+      <div style="display:flex;flex-direction:column;gap:2px">
+        ${it.date?`<span class="row-card-date">이체일: ${it.date}일</span>`:''}
+        ${budgetVal?`<span style="font-size:11px;color:var(--text3)">예산 ${budgetVal}</span>`:''}
+      </div>
+      <div class="row-card-amt-wrap">
+        <span class="row-card-actual">${actualVal}</span>
+      </div>
+    </div>
+    <div class="row-card-bottom">
+      <div class="chk-wrap" style="justify-content:flex-start">
+        <input type="checkbox" id="${uid}" class="chk-hidden" ${it.chk?'checked':''} onchange="toggleMobileChk('${uid}')">
+        <label for="${uid}" class="chk-label ${it.chk?'done':''}">${it.chk?'✓ 완료':'미이체'}</label>
+      </div>
+      <div class="row-card-actions">
+        <button class="act-btn" onclick="openEditFromCard(this.closest('.row-card'))">수정</button>
+        <button class="act-btn del" onclick="delMobileRow(this.closest('.row-card'))">삭제</button>
+      </div>
+    </div>`;
+  container.appendChild(div);
+}
+
+function toggleMobileChk(uid){
+  const inp=document.getElementById(uid);if(!inp)return;
+  const checked=inp.checked;
+  const lbl=inp.nextElementSibling;
+  lbl.classList.toggle('done',checked);
+  lbl.textContent=checked?'✓ 완료':'미이체';
+  const card=inp.closest('.row-card');if(card)card.dataset.chk=checked?'1':'0';
+  // 숨겨진 tr에도 반영
+  syncCardToTable();
+  saveAll();
+}
+
+function openEditFromCard(card){
+  editTr=card;editType=card.dataset.type;
+  document.getElementById('modalTitle').textContent=editType==='sav'?'저축 항목 수정':'지출 항목 수정';
+  document.getElementById('m-blabel').textContent=editType==='sav'?'예정액 (원)':'예산 (원)';
+  document.getElementById('m-alabel').textContent=editType==='sav'?'실입금액 (비워두면 예정과 동일)':'실청구액 (비워두면 예산과 동일)';
+  setCatOptions(editType);
+  const sel=document.getElementById('m-cat');
+  const existingCat=card.dataset.cat||'';
+  const allOpts=Array.from(sel.options).map(o=>o.value);
+  if(existingCat&&!allOpts.includes(existingCat)){saveCustomCat(editType,existingCat);setCatOptions(editType);}
+  sel.value=existingCat||'주거';
+  document.getElementById('m-who').value=card.dataset.who||'공통';
+  document.getElementById('m-name').value=card.dataset.name||'';
+  const fmtV=v=>v&&!isNaN(String(v).replace(/,/g,''))?parseFloat(String(v).replace(/,/g,'')).toLocaleString('ko-KR'):'';
+  document.getElementById('m-budget').value=fmtV(card.dataset.budget);
+  document.getElementById('m-actual').value=fmtV(card.dataset.actual);
+  document.getElementById('m-date').value=card.dataset.date||'';
+  document.getElementById('m-path').value=card.dataset.path||'';
+  document.getElementById('editModal').classList.add('open');
+}
+
+function delMobileRow(card){
+  const tbId=card.dataset.type==='exp'?'expBody':'savBody';
+  const type=card.dataset.type;
+  // 모든 카드 수집 후 인덱스 제거
+  const container=card.parentElement;
+  const cards=Array.from(container.querySelectorAll('.row-card'));
+  const idx=cards.indexOf(card);
+  const items=collectMobileCards(container);
+  if(idx>=0)items.splice(idx,1);
+  buildTable(tbId,items,type);
+  saveAll();calcAll();
+}
+
+function collectMobileCards(container){
+  return Array.from(container.querySelectorAll('.row-card')).map(c=>({
+    cat:c.dataset.cat,who:c.dataset.who,name:c.dataset.name,
+    budget:c.dataset.budget,actual:c.dataset.actual,
+    date:c.dataset.date,chk:c.dataset.chk==='1',path:c.dataset.path
+  }));
+}
+
+function syncCardToTable(){
+  // 카드 → 숨겨진 tr 동기화 (saveAll이 tbl-wrap 기반으로 수집하므로 필요)
+  // 실제로 collectTr은 tr[data-type]을 보므로 buildTable시 둘 다 갱신됨 — saveAll 전에 items 재구성
+}
+
 function toggleChk(uid){
   const inp=document.getElementById(uid);if(!inp)return;
   const checked=inp.checked;
@@ -775,53 +977,40 @@ function toggleChk(uid){
   const tr=inp.closest('tr');if(tr)tr.dataset.chk=checked?'1':'0';
   saveAll();
 }
+
 const EXP_CATS=['주거','통신','보험','교통','용돈','할부','생활비'];
 const SAV_CATS=['청약','적금','예비비'];
 
 function getCustomCats(type){
-  const key = type==='sav' ? 'customSavCats' : 'customExpCats';
-  try{ return JSON.parse(localStorage.getItem(key)||'[]'); }catch(e){ return []; }
+  const key=type==='sav'?'customSavCats':'customExpCats';
+  try{return JSON.parse(localStorage.getItem(key)||'[]');}catch(e){return[];}
 }
-function saveCustomCat(type, name){
-  const key = type==='sav' ? 'customSavCats' : 'customExpCats';
-  const cats = getCustomCats(type);
-  if(!cats.includes(name)) cats.push(name);
-  localStorage.setItem(key, JSON.stringify(cats));
+function saveCustomCat(type,name){
+  const key=type==='sav'?'customSavCats':'customExpCats';
+  const cats=getCustomCats(type);
+  if(!cats.includes(name))cats.push(name);
+  localStorage.setItem(key,JSON.stringify(cats));
 }
-
 function setCatOptions(type){
-  const sel=document.getElementById('m-cat');
-  if(!sel)return;
+  const sel=document.getElementById('m-cat');if(!sel)return;
   const base=type==='sav'?SAV_CATS:EXP_CATS;
   const custom=getCustomCats(type);
   const all=[...base,...custom];
-  sel.innerHTML=all.map(o=>`<option>${o}</option>`).join('')
-    + `<option value="__new__">➕ 새 분류 만들기...</option>`;
-  // 커스텀 입력창 숨기기
+  sel.innerHTML=all.map(o=>`<option>${o}</option>`).join('')+`<option value="__new__">➕ 새 분류 만들기...</option>`;
   const inp=document.getElementById('m-cat-custom');
   if(inp){inp.style.display='none';inp.value='';}
 }
-
 function onCatChange(){
   const sel=document.getElementById('m-cat');
   const inp=document.getElementById('m-cat-custom');
   if(!sel||!inp)return;
-  if(sel.value==='__new__'){
-    inp.style.display='block';
-    inp.focus();
-  } else {
-    inp.style.display='none';
-    inp.value='';
-  }
+  if(sel.value==='__new__'){inp.style.display='block';inp.focus();}
+  else{inp.style.display='none';inp.value='';}
 }
-
 function getFinalCat(){
   const sel=document.getElementById('m-cat');
   const inp=document.getElementById('m-cat-custom');
-  if(sel.value==='__new__'){
-    const custom=(inp.value||'').trim();
-    return custom||'기타';
-  }
+  if(sel.value==='__new__'){const custom=(inp.value||'').trim();return custom||'기타';}
   return sel.value;
 }
 
@@ -833,17 +1022,13 @@ function addRow(tbId,type){
   setCatOptions(type);
   document.getElementById('m-cat').value=type==='sav'?'청약':'주거';
   document.getElementById('m-who').value='공통';
-  document.getElementById('m-name').value='';
-  document.getElementById('m-budget').value='';
-  document.getElementById('m-actual').value='';
-  document.getElementById('m-date').value='';
-  document.getElementById('m-path').value='';
+  ['m-name','m-budget','m-actual','m-date','m-path'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('editModal').classList.add('open');
 }
+
 function delRow(tr){
   const tbId=tr.closest('tbody').id;
   const type=tr.dataset.type;
-  // section-header 행은 data-type 없으므로 data-type 있는 행만 수집
   const items=collectTr(tbId);
   const rows=Array.from(document.querySelectorAll('#'+tbId+' tr[data-type]'));
   const idx=rows.indexOf(tr);
@@ -858,14 +1043,10 @@ function openEdit(tr){
   document.getElementById('m-blabel').textContent=editType==='sav'?'예정액 (원)':'예산 (원)';
   document.getElementById('m-alabel').textContent=editType==='sav'?'실입금액 (비워두면 예정과 동일)':'실청구액 (비워두면 예산과 동일)';
   setCatOptions(editType);
-  // 기존 분류가 목록에 없으면 커스텀으로 추가 후 선택
   const sel=document.getElementById('m-cat');
   const existingCat=tr.dataset.cat||'';
   const allOpts=Array.from(sel.options).map(o=>o.value);
-  if(existingCat && !allOpts.includes(existingCat)){
-    saveCustomCat(editType, existingCat);
-    setCatOptions(editType);
-  }
+  if(existingCat&&!allOpts.includes(existingCat)){saveCustomCat(editType,existingCat);setCatOptions(editType);}
   sel.value=existingCat||'주거';
   document.getElementById('m-who').value=tr.dataset.who||'공통';
   document.getElementById('m-name').value=tr.dataset.name||'';
@@ -876,38 +1057,56 @@ function openEdit(tr){
   document.getElementById('m-path').value=tr.dataset.path||'';
   document.getElementById('editModal').classList.add('open');
 }
+
 function closeModal(){document.getElementById('editModal').classList.remove('open');editTr=null;}
+
 function applyModal(){
   const stripC=id=>(document.getElementById(id)?.value||'').replace(/,/g,'');
   const finalCat=getFinalCat();
-  // 새 분류면 저장
-  if(document.getElementById('m-cat').value==='__new__' && finalCat!=='기타'){
-    saveCustomCat(editType, finalCat);
-  }
+  if(document.getElementById('m-cat').value==='__new__'&&finalCat!=='기타')saveCustomCat(editType,finalCat);
   const it={
-    cat:finalCat,
-    who:document.getElementById('m-who').value,
+    cat:finalCat,who:document.getElementById('m-who').value,
     name:document.getElementById('m-name').value,
-    budget:stripC('m-budget'),
-    actual:stripC('m-actual'),
+    budget:stripC('m-budget'),actual:stripC('m-actual'),
     date:document.getElementById('m-date').value,
     chk:editTr?editTr.dataset.chk==='1':false,
     path:document.getElementById('m-path').value
   };
   if(editTr){
-    const tbId=editTr.closest('tbody').id;
-    const rows=Array.from(document.querySelectorAll('#'+tbId+' tr[data-type]'));
-    const idx=rows.indexOf(editTr);
-    const items=collectTr(tbId);
-    if(idx>=0) items[idx]=it;
-    buildTable(tbId,items,editType);
+    // tr 또는 .row-card 둘 다 처리
+    const isCard=editTr.classList.contains('row-card');
+    if(isCard){
+      const container=editTr.parentElement;
+      const cards=Array.from(container.querySelectorAll('.row-card'));
+      const idx=cards.indexOf(editTr);
+      const items=collectMobileCards(container);
+      if(idx>=0)items[idx]=it;
+      const tbId=editType==='exp'?'expBody':'savBody';
+      buildTable(tbId,items,editType);
+    } else {
+      const tbId=editTr.closest('tbody').id;
+      const rows=Array.from(document.querySelectorAll('#'+tbId+' tr[data-type]'));
+      const idx=rows.indexOf(editTr);
+      const items=collectTr(tbId);
+      if(idx>=0)items[idx]=it;
+      buildTable(tbId,items,editType);
+    }
   } else {
-    // 추가: 기존 항목 수집 후 새 항목 붙여 리빌드
-    const items=collectTr(addTargetTbId);
+    const items=collectAll(addTargetTbId);
     items.push(it);
     buildTable(addTargetTbId,items,editType);
   }
   closeModal();saveAll();calcAll();
+}
+
+// collectAll: tr 기반 (PC) 또는 mobile card 기반 모두 통합
+function collectAll(tbId){
+  const items=collectTr(tbId);
+  if(items.length>0)return items;
+  const mobileId=tbId==='expBody'?'expMobile':'savMobile';
+  const mb=document.getElementById(mobileId);
+  if(mb)return collectMobileCards(mb);
+  return[];
 }
 
 function onIncomeInput(){
@@ -954,7 +1153,6 @@ function calcAll(){
   rel.textContent=totalIn>0?fmtN(rem)+'원':'—';
   rel.style.color=rem<0?'var(--expense)':rem===0?'var(--text2)':'var(--income)';
 
-  // 저축률 업데이트
   const rateEl=document.getElementById('sav-rate-pct');
   const rateBar=document.getElementById('sav-rate-bar');
   const rateSub=document.getElementById('sav-rate-sub');
@@ -978,16 +1176,14 @@ function calcAll(){
   }
 }
 
-/* ── 수입 개인 메모 ── */
+/* ── 수입 메모 ── */
 function editIncomeMemo(who){
   const input=document.getElementById(who+'-memo-input');
   const display=document.getElementById(who+'-memo-display');
   const edit=document.getElementById(who+'-memo-edit');
   if(!input)return;
   input.value=display.textContent||'';
-  display.style.display='none';
-  edit.style.display='block';
-  input.focus();
+  display.style.display='none';edit.style.display='block';input.focus();
 }
 function saveIncomeMemo(who){
   const input=document.getElementById(who+'-memo-input');
@@ -995,20 +1191,16 @@ function saveIncomeMemo(who){
   const edit=document.getElementById(who+'-memo-edit');
   if(!input)return;
   display.textContent=input.value;
-  display.style.display='';
-  edit.style.display='none';
-  saveAll();
+  display.style.display='';edit.style.display='none';saveAll();
 }
 function deleteIncomeMemo(who){
   const display=document.getElementById(who+'-memo-display');
-  if(display)display.textContent='';
-  saveAll();
+  if(display)display.textContent='';saveAll();
 }
 function cancelIncomeMemo(who){
   const display=document.getElementById(who+'-memo-display');
   const edit=document.getElementById(who+'-memo-edit');
-  display.style.display='';
-  edit.style.display='none';
+  display.style.display='';edit.style.display='none';
 }
 function loadIncomeMemos(dd){
   ['w','h'].forEach(who=>{
@@ -1018,9 +1210,8 @@ function loadIncomeMemos(dd){
 }
 function onFmtInput(el){
   const raw=el.value.replace(/,/g,'');
-  if(raw===''||isNaN(raw)){return;}
-  const n=parseInt(raw,10);
-  el.value=n.toLocaleString('ko-KR');
+  if(raw===''||isNaN(raw))return;
+  el.value=parseInt(raw,10).toLocaleString('ko-KR');
 }
 function getRaw(id){
   const el=document.getElementById(id);
@@ -1028,27 +1219,23 @@ function getRaw(id){
   return parseFloat(el.value.replace(/,/g,''))||0;
 }
 function setFmt(id,val){
-  const el=document.getElementById(id);
-  if(!el)return;
+  const el=document.getElementById(id);if(!el)return;
   if(val===''||val===null||val===undefined){el.value='';return;}
   const n=parseFloat(String(val).replace(/,/g,''));
   if(isNaN(n)){el.value='';return;}
   el.value=n.toLocaleString('ko-KR');
 }
 
+/* ── 순자산 계산 ── */
 function calcAsset(){
   const rePrice=getRaw('a-re-price');
   const reLoan=getRaw('a-re-loan');
   const reNet=rePrice-reLoan;
   const reNetEl=document.getElementById('re-net');
   if(reNetEl){reNetEl.textContent=fmtN(reNet)+'원';reNetEl.style.color=reNet<0?'var(--expense)':reNet>0?'var(--income)':'var(--text2)';}
-
-  const aptW=getRaw('a-apt-w');
-  const aptH=getRaw('a-apt-h');
-  const isaCash=getRaw('a-isa-cash');
-  const stockCash=getRaw('a-stock-cash');
+  const aptW=getRaw('a-apt-w');const aptH=getRaw('a-apt-h');
+  const isaCash=getRaw('a-isa-cash');const stockCash=getRaw('a-stock-cash');
   const park=getRaw('a-park');
-
   let isaStockTotal=0;
   document.querySelectorAll('#isa-stocks .stock-item').forEach(el=>{
     const v=el.querySelector('.eval-input')?.value||'';
@@ -1057,7 +1244,6 @@ function calcAsset(){
   updateStockGains('isa-stocks');
   const isaTotalEl=document.getElementById('isa-total');
   if(isaTotalEl)isaTotalEl.textContent=fmtN(isaCash+isaStockTotal)+'원';
-
   let stockTotal=0;
   document.querySelectorAll('#stock-stocks .stock-item').forEach(el=>{
     const v=el.querySelector('.eval-input')?.value||'';
@@ -1066,7 +1252,6 @@ function calcAsset(){
   updateStockGains('stock-stocks');
   const stockTotalEl=document.getElementById('stock-total');
   if(stockTotalEl)stockTotalEl.textContent=fmtN(stockCash+stockTotal)+'원';
-
   let savingsTotal=0;
   document.querySelectorAll('#savings-accounts .ac-account-row').forEach(el=>{
     const v=el.querySelector('.amt-input')?.value||'';
@@ -1077,52 +1262,39 @@ function calcAsset(){
     const v=el.querySelector('.amt-input')?.value||'';
     surplusTotal+=parseFloat(v.replace(/,/g,''))||0;
   });
-
   const apt=aptW+aptH;
   const aptTotalEl=document.getElementById('apt-total');
   if(aptTotalEl)aptTotalEl.textContent=fmtN(apt)+'원';
-
   const isa=isaCash+isaStockTotal;
   const stock=stockCash+stockTotal;
   const net=reNet+apt+savingsTotal+isa+stock+park+surplusTotal;
-
-  const savTotalEl=document.getElementById('savings-total');
-  if(savTotalEl)savTotalEl.textContent=fmtN(savingsTotal)+'원';
-  const surTotalEl=document.getElementById('surplus-total');
-  if(surTotalEl)surTotalEl.textContent=fmtN(surplusTotal)+'원';
-  const parkTotalEl=document.getElementById('park-total');
-  if(parkTotalEl)parkTotalEl.textContent=fmtN(park)+'원';
-
-  const netEl=document.getElementById('netVal');
-  if(netEl)netEl.textContent=fmtN(net)+'원';
-
-  // 4개 자산 카테고리
-  const catRealEstate = Math.max(0, reNet);
-  const catSafe       = Math.max(0, apt) + Math.max(0, savingsTotal);
-  const catInvest     = Math.max(0, isa) + Math.max(0, stock);
-  const catCash       = Math.max(0, park) + Math.max(0, surplusTotal);
-
+  const savTotalEl=document.getElementById('savings-total');if(savTotalEl)savTotalEl.textContent=fmtN(savingsTotal)+'원';
+  const surTotalEl=document.getElementById('surplus-total');if(surTotalEl)surTotalEl.textContent=fmtN(surplusTotal)+'원';
+  const parkTotalEl=document.getElementById('park-total');if(parkTotalEl)parkTotalEl.textContent=fmtN(park)+'원';
+  const netEl=document.getElementById('netVal');if(netEl)netEl.textContent=fmtN(net)+'원';
+  const catRealEstate=Math.max(0,reNet);
+  const catSafe=Math.max(0,apt)+Math.max(0,savingsTotal);
+  const catInvest=Math.max(0,isa)+Math.max(0,stock);
+  const catCash=Math.max(0,park)+Math.max(0,surplusTotal);
   const sub=document.getElementById('netSub');
   if(sub){
     const cats=[
-      {label:'부동산 자산', val:catRealEstate, color:'#4CAF50'},
-      {label:'안전 자산',   val:catSafe,       color:'#2196F3'},
-      {label:'투자 자산',   val:catInvest,     color:'#9C27B0'},
-      {label:'현금성 자산', val:catCash,       color:'#FF9800'},
+      {label:'부동산 자산',val:catRealEstate,color:'#4CAF50'},
+      {label:'안전 자산',  val:catSafe,      color:'#2196F3'},
+      {label:'투자 자산',  val:catInvest,    color:'#9C27B0'},
+      {label:'현금성 자산',val:catCash,      color:'#FF9800'},
     ];
     const grandTotal=cats.reduce((s,c)=>s+c.val,0);
     sub.innerHTML=cats.map(c=>{
       const pct=grandTotal>0?((c.val/grandTotal)*100).toFixed(1):'0.0';
       return`<div style="display:flex;align-items:center;gap:8px">
-        <span style="width:11px;height:11px;border-radius:50%;background:${c.color};display:inline-block;flex-shrink:0"></span>
-        <span style="font-size:13px;color:var(--text2);width:82px;flex-shrink:0">${c.label}</span>
-        <span style="font-size:14px;font-weight:700;color:var(--text)">${c.val>0?fmtN(c.val)+'원':'—'}</span>
+        <span style="width:10px;height:10px;border-radius:50%;background:${c.color};display:inline-block;flex-shrink:0"></span>
+        <span style="font-size:12px;color:var(--text2);width:78px;flex-shrink:0">${c.label}</span>
+        <span style="font-size:13px;font-weight:700;color:var(--text)">${c.val>0?fmtN(c.val)+'원':'—'}</span>
         <span style="font-size:11px;color:var(--text3);margin-left:2px">(${pct}%)</span>
       </div>`;
     }).join('');
   }
-
-  // 목표 게이지 (부동산 제외)
   const financialAssets=catSafe+catInvest+catCash;
   const goalRaw=parseFloat((document.getElementById('goal-amt')?.value||'').replace(/,/g,''))||50000000;
   const goalPct=Math.min(100,Math.round(financialAssets/goalRaw*100));
@@ -1132,22 +1304,18 @@ function calcAsset(){
   const remEl=document.getElementById('goal-remain');
   if(barEl){
     barEl.style.width=goalPct+'%';
-    if(goalPct>=100) barEl.style.background='linear-gradient(90deg,#4CAF50,#1a6b3c)';
-    else if(goalPct>=60) barEl.style.background='linear-gradient(90deg,#2196F3,#9C27B0)';
-    else if(goalPct>=30) barEl.style.background='linear-gradient(90deg,#FF9800,#2196F3)';
+    if(goalPct>=100)barEl.style.background='linear-gradient(90deg,#4CAF50,#1a6b3c)';
+    else if(goalPct>=60)barEl.style.background='linear-gradient(90deg,#2196F3,#9C27B0)';
+    else if(goalPct>=30)barEl.style.background='linear-gradient(90deg,#FF9800,#2196F3)';
     else barEl.style.background='linear-gradient(90deg,#FF9800,#FF5722)';
   }
   if(curEl)curEl.textContent=fmtN(financialAssets)+'원';
-  if(pctEl){
-    pctEl.textContent=goalPct+'%';
-    pctEl.style.color=goalPct>=100?'var(--income)':goalPct>=60?'#9C27B0':'#FF9800';
-  }
+  if(pctEl){pctEl.textContent=goalPct+'%';pctEl.style.color=goalPct>=100?'var(--income)':goalPct>=60?'#9C27B0':'#FF9800';}
   if(remEl){
     const remain=goalRaw-financialAssets;
     remEl.textContent=remain>0?`목표까지 ${fmtN(remain)}원 남음 💪`:'🎉 목표 달성!';
     remEl.style.color=remain>0?'var(--text3)':'var(--income)';
   }
-
   saveAssetData();
 }
 
@@ -1155,23 +1323,21 @@ function updateStockGains(containerId){
   document.querySelectorAll('#'+containerId+' .stock-item').forEach(el=>{
     const buy=parseFloat((el.querySelector('.buy-input')?.value||'').replace(/,/g,''))||0;
     const eval_=parseFloat((el.querySelector('.eval-input')?.value||'').replace(/,/g,''))||0;
-    const gainEl=el.querySelector('.stock-gain-inline');
-    if(!gainEl)return;
+    const gainEl=el.querySelector('.stock-gain-inline');if(!gainEl)return;
     if(!buy||!eval_){gainEl.textContent='';gainEl.className='stock-gain-inline zero';return;}
-    const diff=eval_-buy;
-    const pct=((diff/buy)*100).toFixed(1);
+    const diff=eval_-buy;const pct=((diff/buy)*100).toFixed(1);
     if(diff>0){gainEl.textContent=`+${pct}%`;gainEl.className='stock-gain-inline plus';}
     else if(diff<0){gainEl.textContent=`${pct}%`;gainEl.className='stock-gain-inline minus';}
     else{gainEl.textContent='0%';gainEl.className='stock-gain-inline zero';}
   });
 }
-/* 적금 계좌 */
+
 function addSavingsAccount(data){
   const wrap=document.getElementById('savings-accounts');
   const row=document.createElement('div');row.className='ac-account-row';
   const amtFmt=data?.amt?parseFloat(String(data.amt).replace(/,/g,'')).toLocaleString('ko-KR'):'';
   row.innerHTML=`<div class="ac-account-bank"><input type="text" class="bank-input" placeholder="은행명" value="${data?.bank||''}" oninput="calcAsset()"></div>
-<div class="ac-field-label" style="white-space:nowrap;padding:0 6px;font-size:11px;color:var(--text3)">잔액</div>
+<div class="ac-field-label" style="white-space:nowrap;padding:0 4px;font-size:11px;color:var(--text3)">잔액</div>
 <div class="ac-account-amt"><input type="text" inputmode="numeric" class="amt-input" placeholder="0" value="${amtFmt}" oninput="onFmtInput(this);calcAsset()"></div>
 <button class="ac-del-btn" onclick="this.closest('.ac-account-row').remove();calcAsset()">✕</button>`;
   wrap.appendChild(row);
@@ -1181,12 +1347,11 @@ function addSurplusAccount(data){
   const row=document.createElement('div');row.className='ac-account-row';
   const amtFmt=data?.amt?parseFloat(String(data.amt).replace(/,/g,'')).toLocaleString('ko-KR'):'';
   row.innerHTML=`<div class="ac-account-bank"><input type="text" class="bank-input" placeholder="은행명" value="${data?.bank||''}" oninput="calcAsset()"></div>
-<div class="ac-field-label" style="white-space:nowrap;padding:0 6px;font-size:11px;color:var(--text3)">잔액</div>
+<div class="ac-field-label" style="white-space:nowrap;padding:0 4px;font-size:11px;color:var(--text3)">잔액</div>
 <div class="ac-account-amt"><input type="text" inputmode="numeric" class="amt-input" placeholder="0" value="${amtFmt}" oninput="onFmtInput(this);calcAsset()"></div>
 <button class="ac-del-btn" onclick="this.closest('.ac-account-row').remove();calcAsset()">✕</button>`;
   wrap.appendChild(row);
 }
-/* 주식 종목 */
 function addStockItem(type,data){
   const wrap=document.getElementById(type+'-stocks');
   const item=document.createElement('div');item.className='stock-item';
@@ -1194,19 +1359,17 @@ function addStockItem(type,data){
   const evalFmt=data?.eval?parseFloat(String(data.eval).replace(/,/g,'')).toLocaleString('ko-KR'):'';
   item.innerHTML=`
     <input type="text" class="stock-name-input" placeholder="종목명" value="${data?.name||''}" oninput="calcAsset()">
-    <div class="stock-num-inline">
-      <label>매입금액</label>
+    <div class="stock-num-inline"><label>매입금액</label>
       <input type="text" inputmode="numeric" class="buy-input" placeholder="0" value="${buyFmt}" oninput="onFmtInput(this);calcAsset()">
     </div>
-    <div class="stock-num-inline">
-      <label>평가금액</label>
+    <div class="stock-num-inline"><label>평가금액</label>
       <input type="text" inputmode="numeric" class="eval-input" placeholder="0" value="${evalFmt}" oninput="onFmtInput(this);calcAsset()">
     </div>
     <span class="stock-gain-inline zero"></span>
     <button class="ac-del-btn" onclick="this.closest('.stock-item').remove();calcAsset()">✕</button>`;
   wrap.appendChild(item);
 }
-/* 저장/불러오기 */
+
 function saveAssetData(){
   const k=mk(cy,cm);if(!DB[k])DB[k]={};
   const raw=id=>{const el=document.getElementById(id);return el?el.value.replace(/,/g,''):''};
@@ -1251,13 +1414,13 @@ function saveAll(){
   DB[k].hDate=document.getElementById('h-date').value;
   DB[k].hAmt=(document.getElementById('h-amt')?.value||'').replace(/,/g,'');
   DB[k].hMemo=document.getElementById('h-memo-display')?.textContent||'';
-  ['dep','isa','stk','park','re','debt','etc'].forEach(a=>{
-    const el=document.getElementById('a-'+a); if(el) DB[k]['a_'+a]=el.value;
-  });
-  DB[k].expenses=collectTr('expBody').length>0 ? collectTr('expBody') : ['__empty__'];
-  DB[k].savings=collectTr('savBody').length>0 ? collectTr('savBody') : ['__empty__'];
+  const expItems=collectTr('expBody');
+  const savItems=collectTr('savBody');
+  DB[k].expenses=expItems.length>0?expItems:['__empty__'];
+  DB[k].savings=savItems.length>0?savItems:['__empty__'];
   persist();
 }
+
 function collectTr(tbId){
   return Array.from(document.querySelectorAll('#'+tbId+' tr[data-type]')).map(tr=>({
     cat:tr.dataset.cat,who:tr.dataset.who,name:tr.dataset.name,
@@ -1267,37 +1430,22 @@ function collectTr(tbId){
 }
 
 /* ── 메모 말풍선 ── */
-let memoCurPage=0;
-const MEMO_PER_PAGE=5;
-
-function getMemos(){
-  const k=mk(cy,cm);
-  return (DB[k]&&DB[k].memos)||[];
-}
-function saveMemos(arr){
-  const k=mk(cy,cm);if(!DB[k])DB[k]={};
-  DB[k].memos=arr;
-  persist();
-}
+let memoCurPage=0;const MEMO_PER_PAGE=5;
+function getMemos(){const k=mk(cy,cm);return(DB[k]&&DB[k].memos)||[];}
+function saveMemos(arr){const k=mk(cy,cm);if(!DB[k])DB[k]={};DB[k].memos=arr;persist();}
 function addMemoBubble(){
   const inp=document.getElementById('memo-input');
   const txt=inp.value.trim();if(!txt)return;
   const memos=getMemos();
   const now=new Date();
-  const timeStr=now.getFullYear()+'.'+(now.getMonth()+1)+'.'+(now.getDate())+' '
-    +String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
+  const timeStr=now.getFullYear()+'.'+(now.getMonth()+1)+'.'+now.getDate()+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0');
   memos.push({text:txt,time:timeStr});
-  saveMemos(memos);
-  inp.value='';
-  // 마지막 페이지로 이동
-  const total=memos.length;
-  memoCurPage=Math.max(0,Math.ceil(total/MEMO_PER_PAGE)-1);
+  saveMemos(memos);inp.value='';
+  memoCurPage=Math.max(0,Math.ceil(memos.length/MEMO_PER_PAGE)-1);
   renderMemoBubbles();
 }
 function delMemo(idx){
-  const memos=getMemos();
-  memos.splice(idx,1);
-  saveMemos(memos);
+  const memos=getMemos();memos.splice(idx,1);saveMemos(memos);
   const total=memos.length;
   if(memoCurPage>0&&memoCurPage>=Math.ceil(total/MEMO_PER_PAGE))memoCurPage--;
   renderMemoBubbles();
@@ -1310,50 +1458,36 @@ function memoPage(dir,reset){
   renderMemoBubbles();
 }
 function getMemoColors(){
-  const bg=localStorage.getItem('memo-bg')||'#f5f4f0';
-  const bubble=localStorage.getItem('memo-bubble')||'#1a1a18';
-  return{bg,bubble};
+  return{bg:localStorage.getItem('memo-bg')||'#f5f4f0',bubble:localStorage.getItem('memo-bubble')||'#1a1a18'};
 }
 function applyMemoColors(){
   const bg=document.getElementById('memo-bg-color')?.value||'#f5f4f0';
   const bubble=document.getElementById('memo-bubble-color')?.value||'#1a1a18';
-  localStorage.setItem('memo-bg',bg);
-  localStorage.setItem('memo-bubble',bubble);
+  localStorage.setItem('memo-bg',bg);localStorage.setItem('memo-bubble',bubble);
   const wrap=document.getElementById('memo-bubbles-wrap');
   if(wrap)wrap.style.background=bg;
   renderMemoBubbles();
 }
 function resetMemoColors(){
   localStorage.removeItem('memo-bg');localStorage.removeItem('memo-bubble');
-  const bgEl=document.getElementById('memo-bg-color');
-  const bbEl=document.getElementById('memo-bubble-color');
-  if(bgEl)bgEl.value='#f5f4f0';
-  if(bbEl)bbEl.value='#1a1a18';
+  const bgEl=document.getElementById('memo-bg-color');const bbEl=document.getElementById('memo-bubble-color');
+  if(bgEl)bgEl.value='#f5f4f0';if(bbEl)bbEl.value='#1a1a18';
   applyMemoColors();
 }
 function loadMemoColorPickers(){
   const {bg,bubble}=getMemoColors();
-  const bgEl=document.getElementById('memo-bg-color');
-  const bbEl=document.getElementById('memo-bubble-color');
-  if(bgEl)bgEl.value=bg;
-  if(bbEl)bbEl.value=bubble;
-  const wrap=document.getElementById('memo-bubbles-wrap');
-  if(wrap)wrap.style.background=bg;
+  const bgEl=document.getElementById('memo-bg-color');const bbEl=document.getElementById('memo-bubble-color');
+  if(bgEl)bgEl.value=bg;if(bbEl)bbEl.value=bubble;
+  const wrap=document.getElementById('memo-bubbles-wrap');if(wrap)wrap.style.background=bg;
 }
 function renderMemoBubbles(){
   const {bubble:bubbleColor}=getMemoColors();
-  const memos=getMemos();
-  const total=memos.length;
+  const memos=getMemos();const total=memos.length;
   const totalPages=Math.max(1,Math.ceil(total/MEMO_PER_PAGE));
   const start=memoCurPage*MEMO_PER_PAGE;
   const slice=memos.slice(start,start+MEMO_PER_PAGE);
-  const nav=document.getElementById('memo-nav');
-  const lbl=document.getElementById('memo-page-label');
-  const box=document.getElementById('memo-bubbles');
-  // 텍스트 색상: 배경색 밝기에 따라 자동 결정
-  const r=parseInt(bubbleColor.slice(1,3),16);
-  const g=parseInt(bubbleColor.slice(3,5),16);
-  const b=parseInt(bubbleColor.slice(5,7),16);
+  const nav=document.getElementById('memo-nav');const lbl=document.getElementById('memo-page-label');const box=document.getElementById('memo-bubbles');
+  const r=parseInt(bubbleColor.slice(1,3),16);const g=parseInt(bubbleColor.slice(3,5),16);const b=parseInt(bubbleColor.slice(5,7),16);
   const brightness=(r*299+g*587+b*114)/1000;
   const textColor=brightness>128?'#1a1a18':'#ffffff';
   if(total===0){
@@ -1380,167 +1514,100 @@ function renderMemoBubbles(){
 let includeRealEstate=false;
 function toggleRealEstate(){
   includeRealEstate=!includeRealEstate;
-  const tog=document.getElementById('re-toggle');
-  const knob=document.getElementById('re-toggle-knob');
+  const tog=document.getElementById('re-toggle');const knob=document.getElementById('re-toggle-knob');
   if(tog)tog.style.background=includeRealEstate?'#4CAF50':'#ccc';
   if(knob)knob.style.left=includeRealEstate?'18px':'2px';
   renderHistory();
 }
 
 function renderHistory(){
-  const canvas=document.getElementById('historyChart');
-  if(!canvas)return;
-
+  const canvas=document.getElementById('historyChart');if(!canvas)return;
   const allMonths=[];
   for(let y=2026;y<=cy;y++){
-    const start=y===2026?4:1;
-    const end=y===cy?cm:12;
-    for(let m=start;m<=end;m++) allMonths.push(mk(y,m));
+    const start=y===2026?4:1;const end=y===cy?cm:12;
+    for(let m=start;m<=end;m++)allMonths.push(mk(y,m));
   }
-
   const vals=allMonths.map(k=>{
-    const d=DB[k];
-    if(!d||!d.asset) return null;
+    const d=DB[k];if(!d||!d.asset)return null;
     const a=d.asset;
     const reNet=(parseFloat(a.rePrice)||0)-(parseFloat(a.reLoan)||0);
     const apt=(parseFloat(a.aptW)||0)+(parseFloat(a.aptH)||0);
-    const isaCash=parseFloat(a.isaCash)||0;
-    const stockCash=parseFloat(a.stockCash)||0;
-    const park=parseFloat(a.park)||0;
+    const isaCash=parseFloat(a.isaCash)||0;const stockCash=parseFloat(a.stockCash)||0;const park=parseFloat(a.park)||0;
     const sav=(a.savings||[]).reduce((s,r)=>s+(parseFloat(r.amt)||0),0);
     const sur=(a.surplus||[]).reduce((s,r)=>s+(parseFloat(r.amt)||0),0);
     const isaS=(a.isaStocks||[]).reduce((s,r)=>s+(parseFloat(r.eval)||0),0);
     const stkS=(a.stocks||[]).reduce((s,r)=>s+(parseFloat(r.eval)||0),0);
     const financial=apt+isaCash+stockCash+park+sav+sur+isaS+stkS;
-    return includeRealEstate ? reNet+financial : financial;
+    return includeRealEstate?reNet+financial:financial;
   });
-
   const validVals=vals.filter(v=>v!==null&&v>0);
   if(validVals.length===0){
     const ctx=canvas.getContext('2d');
-    const W=canvas.parentElement.clientWidth-32||700;
-    canvas.width=W;canvas.height=200;
-    ctx.clearRect(0,0,W,200);
+    const W=canvas.parentElement.clientWidth-28||320;
+    canvas.width=W;canvas.height=180;
+    ctx.clearRect(0,0,W,180);
     ctx.fillStyle='#a09d98';ctx.textAlign='center';ctx.font=`12px 'Noto Sans KR',sans-serif`;
-    ctx.fillText('데이터가 쌓이면 추이가 표시됩니다.',W/2,100);
+    ctx.fillText('데이터가 쌓이면 추이가 표시됩니다.',W/2,90);
     return;
   }
-
   const maxVal=Math.max(...validVals,1);
   const yMax=Math.ceil(maxVal/10000000)*10000000;
-
   const dpr=window.devicePixelRatio||1;
-  const W=canvas.parentElement.clientWidth-32||700;
-  const H=200;
-  canvas.width=Math.max(W,600)*dpr;
-  canvas.height=H*dpr;
-  canvas.style.width=Math.max(W,600)+'px';
-  canvas.style.height=H+'px';
-  const ctx=canvas.getContext('2d');
-  ctx.scale(dpr,dpr);
-  const cW=Math.max(W,600),cH=H;
-
-  const PAD_L=58,PAD_R=16,PAD_T=16,PAD_B=38;
-  const chartW=cW-PAD_L-PAD_R;
-  const chartH=cH-PAD_T-PAD_B;
-  const n=allMonths.length;
-  const gap=chartW/n;
-
+  const W=Math.max(canvas.parentElement.clientWidth-28,320);
+  const H=180;
+  canvas.width=W*dpr;canvas.height=H*dpr;
+  canvas.style.width=W+'px';canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');ctx.scale(dpr,dpr);
+  const cW=W,cH=H;
+  const PAD_L=52,PAD_R=14,PAD_T=14,PAD_B=34;
+  const chartW=cW-PAD_L-PAD_R;const chartH=cH-PAD_T-PAD_B;
+  const n=allMonths.length;const gap=chartW/n;
   ctx.clearRect(0,0,cW,cH);
-
-  // Y축 그리드
-  ctx.font=`10px 'Noto Sans KR',sans-serif`;
-  ctx.fillStyle='#a09d98';
-  ctx.textAlign='right';
+  ctx.font=`10px 'Noto Sans KR',sans-serif`;ctx.fillStyle='#a09d98';ctx.textAlign='right';
   for(let i=0;i<=4;i++){
-    const v=yMax/4*i;
-    const y=PAD_T+chartH-(chartH*i/4);
-    ctx.beginPath();
-    ctx.strokeStyle=i===0?'#ccc':'#e8e4df';
-    ctx.lineWidth=i===0?1:0.7;
+    const v=yMax/4*i;const y=PAD_T+chartH-(chartH*i/4);
+    ctx.beginPath();ctx.strokeStyle=i===0?'#ccc':'#e8e4df';ctx.lineWidth=i===0?1:0.7;
     ctx.moveTo(PAD_L,y);ctx.lineTo(PAD_L+chartW,y);ctx.stroke();
     const labelTxt=v>=100000000?(v/100000000).toFixed(1)+'억':(v/10000000).toFixed(0)+'천만';
-    ctx.fillText(labelTxt,PAD_L-6,y+3.5);
+    ctx.fillText(labelTxt,PAD_L-5,y+3.5);
   }
-
-  // 꺾은선 그래프
   const points=[];
   allMonths.forEach((k,i)=>{
-    const v=vals[i];
-    const x=PAD_L+gap*i+gap/2;
-    if(v!==null&&v>0){
-      const y=PAD_T+chartH-Math.max(2,Math.round(chartH*v/yMax));
-      points.push({x,y,v,k,i});
-    }
+    const v=vals[i];const x=PAD_L+gap*i+gap/2;
+    if(v!==null&&v>0){const y=PAD_T+chartH-Math.max(2,Math.round(chartH*v/yMax));points.push({x,y,v,k,i});}
   });
-
-  // 그라데이션 면적
   if(points.length>=2){
-    ctx.beginPath();
-    ctx.moveTo(points[0].x,PAD_T+chartH);
-    ctx.lineTo(points[0].x,points[0].y);
-    for(let i=1;i<points.length;i++){
-      const prev=points[i-1],curr=points[i];
-      const cpx=(prev.x+curr.x)/2;
-      ctx.bezierCurveTo(cpx,prev.y,cpx,curr.y,curr.x,curr.y);
-    }
-    ctx.lineTo(points[points.length-1].x,PAD_T+chartH);
-    ctx.closePath();
+    ctx.beginPath();ctx.moveTo(points[0].x,PAD_T+chartH);ctx.lineTo(points[0].x,points[0].y);
+    for(let i=1;i<points.length;i++){const prev=points[i-1],curr=points[i];const cpx=(prev.x+curr.x)/2;ctx.bezierCurveTo(cpx,prev.y,cpx,curr.y,curr.x,curr.y);}
+    ctx.lineTo(points[points.length-1].x,PAD_T+chartH);ctx.closePath();
     const grad=ctx.createLinearGradient(0,PAD_T,0,PAD_T+chartH);
-    grad.addColorStop(0,'rgba(33,150,243,0.18)');
-    grad.addColorStop(1,'rgba(33,150,243,0.01)');
-    ctx.fillStyle=grad;
-    ctx.fill();
+    grad.addColorStop(0,'rgba(33,150,243,0.18)');grad.addColorStop(1,'rgba(33,150,243,0.01)');
+    ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+    for(let i=1;i<points.length;i++){const prev=points[i-1],curr=points[i];const cpx=(prev.x+curr.x)/2;ctx.bezierCurveTo(cpx,prev.y,cpx,curr.y,curr.x,curr.y);}
+    ctx.strokeStyle='#2196F3';ctx.lineWidth=2.5;ctx.lineJoin='round';ctx.stroke();
   }
-
-  // 선
-  if(points.length>=2){
-    ctx.beginPath();
-    ctx.moveTo(points[0].x,points[0].y);
-    for(let i=1;i<points.length;i++){
-      const prev=points[i-1],curr=points[i];
-      const cpx=(prev.x+curr.x)/2;
-      ctx.bezierCurveTo(cpx,prev.y,cpx,curr.y,curr.x,curr.y);
-    }
-    ctx.strokeStyle='#2196F3';
-    ctx.lineWidth=2.5;
-    ctx.lineJoin='round';
-    ctx.stroke();
-  }
-
-  // 점 + 레이블
   points.forEach(p=>{
     const isCurrentMonth=p.k===mk(cy,cm);
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,isCurrentMonth?5:3.5,0,Math.PI*2);
-    ctx.fillStyle=isCurrentMonth?'#1565c0':'#2196F3';
-    ctx.fill();
-    ctx.strokeStyle='#fff';
-    ctx.lineWidth=1.5;
-    ctx.stroke();
+    ctx.beginPath();ctx.arc(p.x,p.y,isCurrentMonth?5:3.5,0,Math.PI*2);
+    ctx.fillStyle=isCurrentMonth?'#1565c0':'#2196F3';ctx.fill();
+    ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
     if(isCurrentMonth){
-      ctx.fillStyle='#1565c0';
-      ctx.font=`bold 10px 'Noto Sans KR',sans-serif`;
-      ctx.textAlign='center';
+      ctx.fillStyle='#1565c0';ctx.font=`bold 10px 'Noto Sans KR',sans-serif`;ctx.textAlign='center';
       const label=p.v>=100000000?(p.v/100000000).toFixed(1)+'억':(p.v/10000).toFixed(0)+'만';
       ctx.fillText(label,p.x,p.y-10);
     }
   });
-
-  // X축 레이블
   allMonths.forEach((k,i)=>{
     const x=PAD_L+gap*i+gap/2;
     const isCurrentMonth=k===mk(cy,cm);
-    const [yr,mo]=k.split('-');
-    const moNum=parseInt(mo);
+    const [yr,mo]=k.split('-');const moNum=parseInt(mo);
     if(moNum===1||moNum===4||moNum===7||moNum===10){
       ctx.fillStyle=isCurrentMonth?'#2196F3':'#a09d98';
       ctx.font=isCurrentMonth?`bold 10px 'Noto Sans KR',sans-serif`:`10px 'Noto Sans KR',sans-serif`;
-      ctx.textAlign='center';
-      ctx.fillText(`${yr.slice(2)}.${mo}`,x,PAD_T+chartH+14);
+      ctx.textAlign='center';ctx.fillText(`${yr.slice(2)}.${mo}`,x,PAD_T+chartH+14);
     }
   });
-
   ctx.beginPath();ctx.strokeStyle='#ccc';ctx.lineWidth=1;
   ctx.moveTo(PAD_L,PAD_T+chartH);ctx.lineTo(PAD_L+chartW,PAD_T+chartH);ctx.stroke();
 }
@@ -1549,6 +1616,7 @@ function switchTab(tab){
   document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',['income','expense','saving','asset'][i]===tab));
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.getElementById('page-'+tab).classList.add('active');
+  if(tab==='asset')setTimeout(renderHistory,50);
   calcAll();
 }
 
@@ -1556,8 +1624,20 @@ document.getElementById('editModal').addEventListener('click',function(e){if(e.t
 document.getElementById('memo-input').addEventListener('keydown',function(e){
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();addMemoBubble();}
 });
+window.addEventListener('resize',()=>{if(document.getElementById('page-asset').classList.contains('active'))renderHistory();});
 
-init();
+// Firebase SDK 로드 완료 후 실행
+function startApp(){
+  if(typeof firebase!=='undefined' && firebase.database){
+    init();
+  } else {
+    setTimeout(startApp,100);
+  }
+}
 </script>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+<script>startApp();</script>
 </body>
 </html>
