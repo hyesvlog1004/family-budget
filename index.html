@@ -916,9 +916,11 @@ function toggleMobileChk(uid){
   lbl.classList.toggle('done',checked);
   lbl.textContent=checked?'✓ 완료':'미이체';
   const card=inp.closest('.row-card');if(card)card.dataset.chk=checked?'1':'0';
-  // 숨겨진 tr에도 반영
-  syncCardToTable();
-  saveAll();
+  // tr에도 반영
+  const tr=document.querySelector('#expBody tr[data-name="'+card.dataset.name+'"]')||
+           document.querySelector('#savBody tr[data-name="'+card.dataset.name+'"]');
+  if(tr)tr.dataset.chk=checked?'1':'0';
+  calcAll();saveAll();
 }
 
 function openEditFromCard(card){
@@ -975,7 +977,7 @@ function toggleChk(uid){
   lbl.classList.toggle('done',checked);
   lbl.textContent=checked?'✓ 완료':'미이체';
   const tr=inp.closest('tr');if(tr)tr.dataset.chk=checked?'1':'0';
-  saveAll();
+  calcAll();saveAll();
 }
 
 const EXP_CATS=['주거','통신','보험','교통','용돈','할부','생활비'];
@@ -1125,19 +1127,19 @@ function calcAll(){
   document.getElementById('totalIn').textContent=fmt(totalIn);
   document.getElementById('sumIn').textContent=totalIn>0?fmtN(totalIn)+'원':'—';
 
-  let expB=0,expA=0;
+  let expB=0,expA=0,expChk=0;
   document.querySelectorAll('#expBody tr').forEach(tr=>{
     const b=parseFloat(tr.dataset.budget)||0;
     const a=tr.dataset.actual!==''&&tr.dataset.actual!==undefined?parseFloat(tr.dataset.actual)||0:b;
     expB+=b;expA+=a;
+    if(tr.dataset.chk==='1')expChk+=a;
   });
-  document.getElementById('totalEx').textContent=fmt(expA);
-  document.getElementById('sumEx').textContent=fmtN(expA)+'원';
+  document.getElementById('totalEx').textContent=fmt(expChk)+' (이체완료)';
+  document.getElementById('sumEx').textContent=fmtN(expChk)+'원';
   const diff=expA-expB;
   const de=document.getElementById('expDiff');
-  if(diff>0)de.innerHTML=`<span style="color:var(--expense);font-size:12px;font-weight:500">▲ ${fmtN(diff)}원 초과</span>`;
-  else if(diff<0)de.innerHTML=`<span style="color:var(--income);font-size:12px;font-weight:500">▼ ${fmtN(Math.abs(diff))}원 절약</span>`;
-  else de.innerHTML=`<span style="color:var(--text3);font-size:12px">예산 일치</span>`;
+  const unChecked=expA-expChk;
+  de.innerHTML=`<span style="color:var(--text3);font-size:11px">전체 ${fmtN(expA)}원 중 미이체 ${fmtN(unChecked)}원</span>`;
 
   let savT=0;
   document.querySelectorAll('#savBody tr').forEach(tr=>{
